@@ -10,7 +10,7 @@ pub fn trick_score(strain: Strain, how_many: usize) -> usize {
 
 pub fn over_score(contract: &BidContract, over: usize, vul: bool) -> usize {
     match contract.modifier {
-        ContractModifier::Passed => match contract.suit {
+        ContractModifier::Passed => match contract.strain {
             Strain::Clubs | Strain::Diamonds => 20 * over,
             _ => 30 * over,
         },
