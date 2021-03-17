@@ -47,7 +47,7 @@ impl Contract {
                 } else {
                     let overtricks = tricks_taken - tricks_needed;
 
-                    let level_bid = tricks_needed - 6;
+                    let level_bid = actual_contract.level as usize;
                     let multiplier = match actual_contract.modifier {
                         ContractModifier::Passed => 1,
                         ContractModifier::Doubled => 2,
