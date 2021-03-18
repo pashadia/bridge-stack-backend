@@ -128,6 +128,38 @@ fn doubles() -> Result<(), Error> {
     auction.bid(Pass)?;
     auction.bid(Double)?; // This works, it's a reveil
 
+    // Auction can't start with a double either
+    let mut auction = Auction::new(BridgeDirection::S);
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    auction.bid(Pass)?;
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+
+    Ok(())
+}
+
+#[test]
+fn redoubles() -> Result<(), Error> {
+    let mut auction = Auction::new(BridgeDirection::E);
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+
+    auction.bid(Pass)?;
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+
+    auction.bid(RealBid(StrainBid {
+        level: ContractLevel::Three,
+        strain: Strain::Diamonds,
+    }))?;
+    auction.bid(Pass)?;
+    auction.bid(Pass)?;
+    auction.bid(Double)?;
+    auction.bid(Pass)?;
+
+    // Partner doubled in reveil
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+
+    auction.bid(Pass)?;
+    auction.bid(Redouble)?;
+
     Ok(())
 }
 

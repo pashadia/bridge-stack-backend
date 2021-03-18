@@ -35,6 +35,13 @@ impl Auction {
                     Err(Error::CantDouble)
                 }
             }
+            Bid::Redouble => {
+                if self.can_redouble() {
+                    Ok(self.bids.push(bid))
+                } else {
+                    Err(Error::CantRedouble)
+                }
+            }
         }
     }
 
@@ -57,6 +64,14 @@ impl Auction {
     fn can_double(&self) -> bool {
         if let Some(Bid::RealBid(_)) = self.last_meaningful_bid() {
             self.trailing_passes() != 1 // Can't double partner
+        } else {
+            false
+        }
+    }
+
+    fn can_redouble(&self) -> bool {
+        if let Some(Bid::Double) = self.last_meaningful_bid() {
+            self.trailing_passes() != 1 // Can't redouble partner
         } else {
             false
         }
@@ -88,6 +103,7 @@ pub enum Bid {
     Pass,
     RealBid(StrainBid),
     Double,
+    Redouble,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -100,6 +116,7 @@ pub struct StrainBid {
 pub enum Error {
     InsufficientBid,
     CantDouble,
+    CantRedouble,
 }
 
 #[cfg(test)]
