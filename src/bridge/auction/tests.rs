@@ -160,6 +160,16 @@ fn redoubles() -> Result<(), Error> {
     auction.bid(Pass)?;
     auction.bid(Redouble)?;
 
+    // Fun ends after redouble
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+
+    // Auction can't start with a redouble either
+    let mut auction = Auction::new(BridgeDirection::S);
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    auction.bid(Pass)?;
+    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+
     Ok(())
 }
 
