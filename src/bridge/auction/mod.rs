@@ -18,13 +18,23 @@ impl Auction {
     }
 
     pub fn bid(&mut self, bid: Bid) -> Result<(), Error> {
-        if self.is_bid_sufficient(bid) {
-            if let Bid::RealBid(_) = bid {
-                self.last_strain_bid = bid;
-            };
-            Ok(self.bids.push(bid))
-        } else {
-            Err(Error::InsufficientBid)
+        match bid {
+            Bid::Pass => Ok(self.bids.push(bid)),
+            Bid::RealBid(_) => {
+                if self.is_bid_sufficient(bid) {
+                    self.last_strain_bid = bid;
+                    Ok(self.bids.push(bid))
+                } else {
+                    Err(Error::InsufficientBid)
+                }
+            }
+            Bid::Double => {
+                if self.can_double() {
+                    Ok(self.bids.push(bid))
+                } else {
+                    Err(Error::CantDouble)
+                }
+            }
         }
     }
 
@@ -44,6 +54,26 @@ impl Auction {
         self.last_strain_bid == Bid::Pass || bid == Bid::Pass || bid > self.last_strain_bid
     }
 
+    fn can_double(&self) -> bool {
+        if let Some(Bid::RealBid(_)) = self.last_meaningful_bid() {
+            self.trailing_passes() != 1 // Can't double partner
+        } else {
+            false
+        }
+    }
+
+    fn last_meaningful_bid(&self) -> Option<Bid> {
+        self.bids.iter().rev().find(|&&b| b != Bid::Pass).cloned()
+    }
+
+    fn trailing_passes(&self) -> usize {
+        self.bids
+            .iter()
+            .rev()
+            .take_while(|&&b| b == Bid::Pass)
+            .count()
+    }
+
     pub fn contract(&self) -> Option<Contract> {
         if self.is_completed() {
             Some(Contract::PassedOut)
@@ -57,6 +87,7 @@ impl Auction {
 pub enum Bid {
     Pass,
     RealBid(StrainBid),
+    Double,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -68,6 +99,7 @@ pub struct StrainBid {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     InsufficientBid,
+    CantDouble,
 }
 
 #[cfg(test)]

@@ -70,6 +70,64 @@ fn disallow_insufficient() -> Result<(), Error> {
         panic!("We should have something other than Pass by now")
     }
 
+    auction.bid(Pass)?;
+    auction
+        .bid(RealBid(StrainBid {
+            level: ContractLevel::One,
+            strain: Strain::Spades,
+        }))
+        .unwrap_err();
+
+    auction.bid(RealBid(StrainBid {
+        level: ContractLevel::Three,
+        strain: Strain::Spades,
+    }))?;
+
+    assert_eq!(
+        auction
+            .bid(RealBid(StrainBid {
+                level: ContractLevel::Two,
+                strain: Strain::Clubs,
+            }))
+            .unwrap_err(),
+        Error::InsufficientBid
+    );
+
+    Ok(())
+}
+
+#[test]
+fn doubles() -> Result<(), Error> {
+    let mut auction = Auction::new(BridgeDirection::S);
+    auction.bid(RealBid(StrainBid {
+        level: ContractLevel::One,
+        strain: Strain::Diamonds,
+    }))?;
+    auction.bid(Double)?;
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+
+    auction.bid(Pass)?;
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+
+    assert_eq!(
+        auction
+            .bid(RealBid(StrainBid {
+                level: ContractLevel::One,
+                strain: Strain::Diamonds,
+            }))
+            .unwrap_err(),
+        Error::InsufficientBid
+    ); // Good to test this after double
+
+    auction.bid(RealBid(StrainBid {
+        level: ContractLevel::Three,
+        strain: Strain::Diamonds,
+    }))?;
+    auction.bid(Pass)?;
+    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    auction.bid(Pass)?;
+    auction.bid(Double)?; // This works, it's a reveil
+
     Ok(())
 }
 
