@@ -4,6 +4,7 @@ use std::cmp::max;
 
 mod util;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Contract {
     PassedOut,
     BidContract(BidContract),
@@ -97,6 +98,7 @@ impl Contract {
     }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct BidContract {
     strain: Strain,
     pub(crate) level: ContractLevel,
@@ -104,7 +106,7 @@ pub struct BidContract {
     declarer: BridgeDirection,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Strain {
     Clubs,
     Diamonds,
@@ -113,7 +115,7 @@ pub enum Strain {
     NoTrump,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ContractLevel {
     One = 1,
     Two = 2,
@@ -124,6 +126,7 @@ pub enum ContractLevel {
     Seven = 7,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ContractModifier {
     Passed,
     Doubled,
@@ -135,7 +138,6 @@ mod tests {
 
     use crate::bridge::contract::{BidContract, Contract, ContractLevel, ContractModifier, Strain};
     use crate::bridge::{BridgeDirection, Vulnerability};
-    use std::cmp::min;
 
     #[test]
     fn new() {

@@ -1,7 +1,11 @@
+#![allow(dead_code)]
+
 use cardpack::BridgeBoard;
 
 mod contract;
 use contract::Contract;
+
+mod auction;
 
 #[derive(Default)]
 pub struct Board {
