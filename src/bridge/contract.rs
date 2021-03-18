@@ -106,7 +106,7 @@ pub struct BidContract {
     declarer: BridgeDirection,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Strain {
     Clubs,
     Diamonds,
@@ -115,7 +115,7 @@ pub enum Strain {
     NoTrump,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ContractLevel {
     One = 1,
     Two = 2,
@@ -405,5 +405,18 @@ mod tests {
         let contract = Contract::BidContract(nt_grand_re);
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::NONE), 2280);
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 2980);
+    }
+
+    mod basic {
+        use crate::bridge::contract::{ContractLevel, Strain};
+
+        #[test]
+        fn comparisons() {
+            assert!(Strain::Clubs < Strain::Hearts);
+            assert!(Strain::NoTrump > Strain::Hearts);
+            assert_eq!(Strain::Diamonds, Strain::Diamonds);
+
+            assert!(ContractLevel::Four < ContractLevel::Six);
+        }
     }
 }
