@@ -100,10 +100,10 @@ impl Contract {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct BidContract {
-    strain: Strain,
+    pub(crate) strain: Strain,
     pub(crate) level: ContractLevel,
-    modifier: ContractModifier,
-    declarer: BridgeDirection,
+    pub(crate) modifier: ContractModifier,
+    pub(crate) declarer: BridgeDirection,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]

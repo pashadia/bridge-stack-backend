@@ -1,4 +1,4 @@
-use crate::bridge::contract::{Contract, ContractLevel, Strain};
+use crate::bridge::contract::{BidContract, Contract, ContractLevel, ContractModifier, Strain};
 use crate::bridge::BridgeDirection;
 
 #[derive(Debug)]
@@ -91,7 +91,30 @@ impl Auction {
 
     pub fn contract(&self) -> Option<Contract> {
         if self.is_completed() {
-            Some(Contract::PassedOut)
+            match self.last_meaningful_bid() {
+                None => Some(Contract::PassedOut),
+                Some(bid) => {
+                    let modifier = match bid {
+                        Bid::Pass => {
+                            unreachable!()
+                        }
+                        Bid::RealBid(_) => ContractModifier::Passed,
+                        Bid::Double => ContractModifier::Doubled,
+                        Bid::Redouble => ContractModifier::Redoubled,
+                    };
+                    let declarer = self.dealer;
+                    if let Bid::RealBid(strain_bid) = self.last_strain_bid {
+                        Some(Contract::BidContract(BidContract {
+                            strain: strain_bid.strain,
+                            level: strain_bid.level,
+                            modifier,
+                            declarer,
+                        }))
+                    } else {
+                        unreachable!("last strain should really be a bid")
+                    }
+                }
+            }
         } else {
             None
         }
