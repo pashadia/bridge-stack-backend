@@ -22,11 +22,11 @@ impl Contract {
                     let down = tricks_taken as i32 - tricks_needed as i32;
 
                     match actual_contract.modifier {
-                        ContractModifier::Passed => {
+                        Modifier::Pass => {
                             let base_value = if vul { 100 } else { 50 };
                             base_value * down
                         }
-                        ContractModifier::Doubled => {
+                        Modifier::Double => {
                             if vul {
                                 down * 300 + 100
                             } else {
@@ -35,7 +35,7 @@ impl Contract {
                                 worse * 300 + bad * 200 - 100
                             }
                         }
-                        ContractModifier::Redoubled => {
+                        Modifier::Redouble => {
                             if vul {
                                 down * 600 + 200
                             } else {
@@ -50,9 +50,9 @@ impl Contract {
 
                     let level_bid = actual_contract.level as usize;
                     let multiplier = match actual_contract.modifier {
-                        ContractModifier::Passed => 1,
-                        ContractModifier::Doubled => 2,
-                        ContractModifier::Redoubled => 4,
+                        Modifier::Pass => 1,
+                        Modifier::Double => 2,
+                        Modifier::Redouble => 4,
                     };
                     let made_score = trick_score(actual_contract.strain, level_bid) * multiplier;
                     let over_score = over_score(actual_contract, overtricks, vul);
@@ -67,9 +67,9 @@ impl Contract {
                         50
                     };
                     let insult_bonus = match actual_contract.modifier {
-                        ContractModifier::Passed => 0,
-                        ContractModifier::Doubled => 50,
-                        ContractModifier::Redoubled => 100,
+                        Modifier::Pass => 0,
+                        Modifier::Double => 50,
+                        Modifier::Redouble => 100,
                     };
                     let slam_bonus = match level_bid {
                         1..=5 => 0,
@@ -102,7 +102,7 @@ impl Contract {
 pub struct BidContract {
     pub(crate) strain: Strain,
     pub(crate) level: ContractLevel,
-    pub(crate) modifier: ContractModifier,
+    pub(crate) modifier: Modifier,
     pub(crate) declarer: BridgeDirection,
 }
 
@@ -127,16 +127,16 @@ pub enum ContractLevel {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum ContractModifier {
-    Passed,
-    Doubled,
-    Redoubled,
+pub enum Modifier {
+    Pass,
+    Double,
+    Redouble,
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::bridge::contract::{BidContract, Contract, ContractLevel, ContractModifier, Strain};
+    use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
     use crate::bridge::{BridgeDirection, Vulnerability};
 
     #[test]
@@ -144,7 +144,7 @@ mod tests {
         let _contract = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::S,
         };
     }
@@ -154,7 +154,7 @@ mod tests {
         let bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(bid);
@@ -179,7 +179,7 @@ mod tests {
         let bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(bid);
@@ -204,7 +204,7 @@ mod tests {
         let bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Redoubled,
+            modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(bid);
@@ -229,7 +229,7 @@ mod tests {
         let major_bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Two,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(major_bid);
@@ -239,7 +239,7 @@ mod tests {
         let minor_bid = BidContract {
             strain: Strain::Diamonds,
             level: ContractLevel::One,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor_bid);
@@ -252,7 +252,7 @@ mod tests {
         let major_bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(major_bid);
@@ -268,7 +268,7 @@ mod tests {
         let nt_game = BidContract {
             strain: Strain::NoTrump,
             level: ContractLevel::Three,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(nt_game);
@@ -278,7 +278,7 @@ mod tests {
         let minor_bid = BidContract {
             strain: Strain::Diamonds,
             level: ContractLevel::Five,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor_bid);
@@ -291,7 +291,7 @@ mod tests {
         let major_bid = BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Four,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(major_bid);
@@ -305,7 +305,7 @@ mod tests {
         let nt_game = BidContract {
             strain: Strain::NoTrump,
             level: ContractLevel::Three,
-            modifier: ContractModifier::Redoubled,
+            modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(nt_game);
@@ -315,7 +315,7 @@ mod tests {
         let higher_nt_game = BidContract {
             strain: Strain::NoTrump,
             level: ContractLevel::Five,
-            modifier: ContractModifier::Redoubled,
+            modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(higher_nt_game);
@@ -324,7 +324,7 @@ mod tests {
         let minor_game = BidContract {
             strain: Strain::Clubs,
             level: ContractLevel::Five,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor_game);
@@ -337,7 +337,7 @@ mod tests {
         let minor_no_game = BidContract {
             strain: Strain::Clubs,
             level: ContractLevel::Two,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor_no_game);
@@ -351,7 +351,7 @@ mod tests {
         let minor_redoubled_into_game = BidContract {
             strain: Strain::Clubs,
             level: ContractLevel::Two,
-            modifier: ContractModifier::Redoubled,
+            modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor_redoubled_into_game);
@@ -363,7 +363,7 @@ mod tests {
         let two_nt = BidContract {
             strain: Strain::NoTrump,
             level: ContractLevel::Two,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(two_nt);
@@ -375,7 +375,7 @@ mod tests {
         let minor = BidContract {
             strain: Strain::Clubs,
             level: ContractLevel::Six,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(minor);
@@ -387,7 +387,7 @@ mod tests {
         let major_doubled = BidContract {
             strain: Strain::Hearts,
             level: ContractLevel::Six,
-            modifier: ContractModifier::Doubled,
+            modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(major_doubled);
@@ -399,7 +399,7 @@ mod tests {
         let nt_grand_re = BidContract {
             strain: Strain::NoTrump,
             level: ContractLevel::Seven,
-            modifier: ContractModifier::Redoubled,
+            modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
         let contract = Contract::BidContract(nt_grand_re);

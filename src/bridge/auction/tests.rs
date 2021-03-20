@@ -1,20 +1,20 @@
 use crate::bridge::auction::Error::InsufficientBid;
-use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid};
+use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
 use crate::bridge::contract::Contract::PassedOut;
-use crate::bridge::contract::{BidContract, Contract, ContractLevel, ContractModifier, Strain};
+use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::bridge::BridgeDirection;
 
 #[test]
 fn can_pass_out() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::N);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), false);
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), false);
     assert!(auction.contract().is_none());
 
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), true);
     assert_eq!(auction.contract(), Some(PassedOut));
 
@@ -24,17 +24,17 @@ fn can_pass_out() -> Result<(), Error> {
 #[test]
 fn can_bid_strain() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::One,
         strain: Strain::Diamonds,
     }))?;
 
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
 
     assert_eq!(auction.is_completed(), false);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), true);
 
     Ok(())
@@ -43,14 +43,14 @@ fn can_bid_strain() -> Result<(), Error> {
 #[test]
 fn disallow_insufficient() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::One,
         strain: Strain::Diamonds,
     }))?;
 
-    auction.bid(Pass)?;
-    assert_ne!(auction.last_strain_bid, Pass); // make sure only strains are saved
+    auction.bid(PASS)?;
+    assert_ne!(auction.last_strain_bid, PASS); // make sure only strains are saved
 
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::One,
@@ -70,7 +70,7 @@ fn disallow_insufficient() -> Result<(), Error> {
         panic!("We should have something other than Pass by now")
     }
 
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     auction
         .bid(RealBid(StrainBid {
             level: ContractLevel::One,
@@ -103,11 +103,11 @@ fn doubles() -> Result<(), Error> {
         level: ContractLevel::One,
         strain: Strain::Diamonds,
     }))?;
-    auction.bid(Double)?;
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    auction.bid(DOUBLE)?;
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
 
-    auction.bid(Pass)?;
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    auction.bid(PASS)?;
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
 
     assert_eq!(
         auction
@@ -123,16 +123,16 @@ fn doubles() -> Result<(), Error> {
         level: ContractLevel::Three,
         strain: Strain::Diamonds,
     }))?;
-    auction.bid(Pass)?;
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
-    auction.bid(Pass)?;
-    auction.bid(Double)?; // This works, it's a reveil
+    auction.bid(PASS)?;
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
+    auction.bid(PASS)?;
+    auction.bid(DOUBLE)?; // This works, it's a reveil
 
     // Auction can't start with a double either
     let mut auction = Auction::new(BridgeDirection::S);
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
-    auction.bid(Pass)?;
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
+    auction.bid(PASS)?;
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
 
     Ok(())
 }
@@ -140,35 +140,35 @@ fn doubles() -> Result<(), Error> {
 #[test]
 fn redoubles() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::E);
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
-    auction.bid(Pass)?;
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    auction.bid(PASS)?;
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::Three,
         strain: Strain::Diamonds,
     }))?;
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
-    auction.bid(Double)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
+    auction.bid(DOUBLE)?;
+    auction.bid(PASS)?;
 
     // Partner doubled in reveil
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
-    auction.bid(Pass)?;
-    auction.bid(Redouble)?;
+    auction.bid(PASS)?;
+    auction.bid(REDOUBLE)?;
 
     // Fun ends after redouble
-    assert_eq!(auction.bid(Double).unwrap_err(), Error::CantDouble);
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
     // Auction can't start with a redouble either
     let mut auction = Auction::new(BridgeDirection::S);
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
-    auction.bid(Pass)?;
-    assert_eq!(auction.bid(Redouble).unwrap_err(), Error::CantRedouble);
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
+    auction.bid(PASS)?;
+    assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
     Ok(())
 }
@@ -177,26 +177,26 @@ fn redoubles() -> Result<(), Error> {
 fn auction_finished() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::W);
     assert_eq!(auction.is_completed(), false);
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), false);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), true);
 
     let mut auction = Auction::new(BridgeDirection::W);
 
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::Three,
         strain: Strain::Diamonds,
     }))?;
-    auction.bid(Double)?;
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(DOUBLE)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), false);
 
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.is_completed(), true);
 
     Ok(())
@@ -206,11 +206,11 @@ fn auction_finished() -> Result<(), Error> {
 fn generate_contract() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
     assert_eq!(auction.contract(), None);
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.contract(), None);
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.contract(), Some(Contract::PassedOut));
 
     let mut auction = Auction::new(BridgeDirection::S);
@@ -218,17 +218,17 @@ fn generate_contract() -> Result<(), Error> {
         level: ContractLevel::Two,
         strain: Strain::Spades,
     }))?;
-    auction.bid(Pass)?;
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
+    auction.bid(PASS)?;
     assert_eq!(auction.contract(), None);
 
-    auction.bid(Pass)?;
+    auction.bid(PASS)?;
     assert_eq!(
         auction.contract(),
         Some(Contract::BidContract(BidContract {
             strain: Strain::Spades,
             level: ContractLevel::Two,
-            modifier: ContractModifier::Passed,
+            modifier: Modifier::Pass,
             declarer: BridgeDirection::S
         }))
     );

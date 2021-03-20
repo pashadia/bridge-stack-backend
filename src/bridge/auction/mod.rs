@@ -1,5 +1,6 @@
-use crate::bridge::contract::{BidContract, Contract, ContractLevel, ContractModifier, Strain};
+use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::bridge::BridgeDirection;
+use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub struct Auction {
@@ -13,13 +14,13 @@ impl Auction {
         Auction {
             dealer,
             bids: vec![],
-            last_strain_bid: Bid::Pass,
+            last_strain_bid: PASS,
         }
     }
 
     pub fn bid(&mut self, bid: Bid) -> Result<(), Error> {
         match bid {
-            Bid::Pass => Ok(self.bids.push(bid)),
+            PASS => Ok(self.bids.push(bid)),
             Bid::RealBid(_) => {
                 if self.is_bid_sufficient(bid) {
                     self.last_strain_bid = bid;
@@ -28,14 +29,14 @@ impl Auction {
                     Err(Error::InsufficientBid)
                 }
             }
-            Bid::Double => {
+            DOUBLE => {
                 if self.can_double() {
                     Ok(self.bids.push(bid))
                 } else {
                     Err(Error::CantDouble)
                 }
             }
-            Bid::Redouble => {
+            REDOUBLE => {
                 if self.can_redouble() {
                     Ok(self.bids.push(bid))
                 } else {
@@ -47,18 +48,18 @@ impl Auction {
 
     pub fn is_completed(&self) -> bool {
         if self.has_real_bid() {
-            self.bids.iter().rev().take(3).all(|&b| b == Bid::Pass)
+            self.bids.iter().rev().take(3).all(|&b| b == PASS)
         } else {
             self.bids.len() > 3
         }
     }
 
     pub fn has_real_bid(&self) -> bool {
-        self.bids.iter().any(|&b| b != Bid::Pass)
+        self.bids.iter().any(|&b| b != PASS)
     }
 
     fn is_bid_sufficient(&self, bid: Bid) -> bool {
-        self.last_strain_bid == Bid::Pass || bid == Bid::Pass || bid > self.last_strain_bid
+        self.last_strain_bid == PASS || bid == PASS || bid > self.last_strain_bid
     }
 
     fn can_double(&self) -> bool {
@@ -70,7 +71,7 @@ impl Auction {
     }
 
     fn can_redouble(&self) -> bool {
-        if let Some(Bid::Double) = self.last_meaningful_bid() {
+        if let Some(DOUBLE) = self.last_meaningful_bid() {
             self.trailing_passes() != 1 // Can't redouble partner
         } else {
             false
@@ -78,15 +79,11 @@ impl Auction {
     }
 
     fn last_meaningful_bid(&self) -> Option<Bid> {
-        self.bids.iter().rev().find(|&&b| b != Bid::Pass).cloned()
+        self.bids.iter().rev().find(|&&b| b != PASS).cloned()
     }
 
     fn trailing_passes(&self) -> usize {
-        self.bids
-            .iter()
-            .rev()
-            .take_while(|&&b| b == Bid::Pass)
-            .count()
+        self.bids.iter().rev().take_while(|&&b| b == PASS).count()
     }
 
     pub fn contract(&self) -> Option<Contract> {
@@ -95,12 +92,8 @@ impl Auction {
                 None => Some(Contract::PassedOut),
                 Some(bid) => {
                     let modifier = match bid {
-                        Bid::Pass => {
-                            unreachable!()
-                        }
-                        Bid::RealBid(_) => ContractModifier::Passed,
-                        Bid::Double => ContractModifier::Doubled,
-                        Bid::Redouble => ContractModifier::Redoubled,
+                        Bid::RealBid(_) => Modifier::Pass,
+                        Bid::Other(modifier) => modifier,
                     };
                     let declarer = self.dealer;
                     if let Bid::RealBid(strain_bid) = self.last_strain_bid {
@@ -121,13 +114,27 @@ impl Auction {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Bid {
-    Pass,
     RealBid(StrainBid),
-    Double,
-    Redouble,
+    Other(Modifier),
 }
+
+impl PartialOrd for Bid {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match other {
+            Bid::RealBid(other_real) => match self {
+                Bid::RealBid(this_real) => this_real.partial_cmp(other_real),
+                Bid::Other(_) => Some(Ordering::Greater),
+            },
+            Bid::Other(_) => Some(Ordering::Less),
+        }
+    }
+}
+
+const PASS: Bid = Bid::Other(Modifier::Pass);
+const DOUBLE: Bid = Bid::Other(Modifier::Double);
+const REDOUBLE: Bid = Bid::Other(Modifier::Redouble);
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StrainBid {
