@@ -1,6 +1,5 @@
 use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::bridge::BridgeDirection;
-use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub struct Auction {
@@ -21,8 +20,8 @@ impl Auction {
     pub fn bid(&mut self, bid: Bid) -> Result<(), Error> {
         match bid {
             PASS => Ok(self.bids.push(bid)),
-            Bid::RealBid(_) => {
-                if self.is_bid_sufficient(bid) {
+            Bid::RealBid(real_bid) => {
+                if self.is_bid_sufficient(real_bid) {
                     self.last_strain_bid = bid;
                     Ok(self.bids.push(bid))
                 } else {
@@ -58,8 +57,12 @@ impl Auction {
         self.bids.iter().any(|&b| b != PASS)
     }
 
-    fn is_bid_sufficient(&self, bid: Bid) -> bool {
-        self.last_strain_bid == PASS || bid == PASS || bid > self.last_strain_bid
+    fn is_bid_sufficient(&self, other_bid: StrainBid) -> bool {
+        match self.last_strain_bid {
+            Bid::RealBid(this_bid) => other_bid > this_bid,
+            PASS => true,
+            _ => unreachable!("Last strain can't be a double/redouble"),
+        }
     }
 
     fn can_double(&self) -> bool {
@@ -118,18 +121,6 @@ impl Auction {
 pub enum Bid {
     RealBid(StrainBid),
     Other(Modifier),
-}
-
-impl PartialOrd for Bid {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match other {
-            Bid::RealBid(other_real) => match self {
-                Bid::RealBid(this_real) => this_real.partial_cmp(other_real),
-                Bid::Other(_) => Some(Ordering::Greater),
-            },
-            Bid::Other(_) => Some(Ordering::Less),
-        }
-    }
 }
 
 const PASS: Bid = Bid::Other(Modifier::Pass);
