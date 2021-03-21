@@ -1,5 +1,6 @@
 use num_derive::FromPrimitive;
 
+use crate::bridge::auction::StrainBid;
 use crate::bridge::contract::util::{over_score, trick_score};
 use crate::bridge::{BridgeDirection, Vulnerability};
 use std::cmp::max;
@@ -17,7 +18,7 @@ impl Contract {
         match self {
             Contract::PassedOut => 0,
             Contract::BidContract(actual_contract) => {
-                let tricks_needed: usize = 6 + actual_contract.level as usize;
+                let tricks_needed: usize = 6 + actual_contract.level() as usize;
 
                 let vul = vulnerability.is_vulnerable(actual_contract.declarer);
                 if tricks_needed > tricks_taken {
@@ -50,13 +51,13 @@ impl Contract {
                 } else {
                     let overtricks = tricks_taken - tricks_needed;
 
-                    let level_bid = actual_contract.level as usize;
+                    let level_bid = actual_contract.level() as usize;
                     let multiplier = match actual_contract.modifier {
                         Modifier::Pass => 1,
                         Modifier::Double => 2,
                         Modifier::Redouble => 4,
                     };
-                    let made_score = trick_score(actual_contract.strain, level_bid) * multiplier;
+                    let made_score = trick_score(actual_contract.strain(), level_bid) * multiplier;
                     let over_score = over_score(actual_contract, overtricks, vul);
                     let is_game = made_score >= 100;
                     let made_bonus = if is_game {
@@ -102,10 +103,18 @@ impl Contract {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct BidContract {
-    pub(crate) strain: Strain,
-    pub(crate) level: ContractLevel,
+    pub(crate) contract: StrainBid,
     pub(crate) modifier: Modifier,
     pub(crate) declarer: BridgeDirection,
+}
+
+impl BidContract {
+    pub fn level(&self) -> ContractLevel {
+        self.contract.level
+    }
+    pub fn strain(&self) -> Strain {
+        self.contract.strain
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
@@ -138,14 +147,14 @@ pub enum Modifier {
 #[cfg(test)]
 mod tests {
 
-    use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
+    use crate::bridge::contract::{BidContract, Contract, Modifier};
     use crate::bridge::{BridgeDirection, Vulnerability};
+    use std::convert::TryInto;
 
     #[test]
     fn new() {
         let _contract = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::S,
         };
@@ -154,8 +163,7 @@ mod tests {
     #[test]
     fn score_undoubled_down() {
         let bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -179,8 +187,7 @@ mod tests {
     #[test]
     fn score_doubled_down() {
         let bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -204,8 +211,7 @@ mod tests {
     #[test]
     fn score_redoubled_down() {
         let bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
@@ -229,8 +235,7 @@ mod tests {
     #[test]
     fn partscores_made_undoubled() {
         let major_bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Two,
+            contract: "2s".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -239,8 +244,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(9, Vulnerability::ALL), 140);
 
         let minor_bid = BidContract {
-            strain: Strain::Diamonds,
-            level: ContractLevel::One,
+            contract: "1d".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -252,8 +256,7 @@ mod tests {
     #[test]
     fn games_undoubled() {
         let major_bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -268,8 +271,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 710);
 
         let nt_game = BidContract {
-            strain: Strain::NoTrump,
-            level: ContractLevel::Three,
+            contract: "3nt".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -278,8 +280,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 720);
 
         let minor_bid = BidContract {
-            strain: Strain::Diamonds,
-            level: ContractLevel::Five,
+            contract: "5d".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -291,8 +292,7 @@ mod tests {
     #[test]
     fn games_doubled() {
         let major_bid = BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Four,
+            contract: "4s".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -305,8 +305,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 1390);
 
         let nt_game = BidContract {
-            strain: Strain::NoTrump,
-            level: ContractLevel::Three,
+            contract: "3nt".try_into().unwrap(),
             modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
@@ -315,8 +314,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(12, Vulnerability::NONE), 1400);
 
         let higher_nt_game = BidContract {
-            strain: Strain::NoTrump,
-            level: ContractLevel::Five,
+            contract: "5n".try_into().unwrap(),
             modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
@@ -324,8 +322,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(11, Vulnerability::ALL), 1240);
         assert_eq!(contract.get_score_for_tricks(12, Vulnerability::NONE), 1240);
         let minor_game = BidContract {
-            strain: Strain::Clubs,
-            level: ContractLevel::Five,
+            contract: "5c".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -337,8 +334,7 @@ mod tests {
     #[test]
     fn doubled_partscores() {
         let minor_no_game = BidContract {
-            strain: Strain::Clubs,
-            level: ContractLevel::Two,
+            contract: "2c".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -351,8 +347,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(9, Vulnerability::NONE), 280);
 
         let minor_redoubled_into_game = BidContract {
-            strain: Strain::Clubs,
-            level: ContractLevel::Two,
+            contract: "2c".try_into().unwrap(),
             modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };
@@ -363,8 +358,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(10, Vulnerability::NONE), 960);
 
         let two_nt = BidContract {
-            strain: Strain::NoTrump,
-            level: ContractLevel::Two,
+            contract: "2n".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -375,8 +369,7 @@ mod tests {
     #[test]
     fn slams() {
         let minor = BidContract {
-            strain: Strain::Clubs,
-            level: ContractLevel::Six,
+            contract: "6c".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
@@ -387,8 +380,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 1390);
 
         let major_doubled = BidContract {
-            strain: Strain::Hearts,
-            level: ContractLevel::Six,
+            contract: "6h".try_into().unwrap(),
             modifier: Modifier::Double,
             declarer: BridgeDirection::N,
         };
@@ -399,8 +391,7 @@ mod tests {
         assert_eq!(contract.get_score_for_tricks(13, Vulnerability::ALL), 1860);
 
         let nt_grand_re = BidContract {
-            strain: Strain::NoTrump,
-            level: ContractLevel::Seven,
+            contract: "7NT".try_into().unwrap(),
             modifier: Modifier::Redouble,
             declarer: BridgeDirection::N,
         };

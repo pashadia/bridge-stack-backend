@@ -101,10 +101,9 @@ impl Auction {
                         Bid::Other(modifier) => modifier,
                     };
                     let declarer = self.dealer;
-                    if let Bid::RealBid(strain_bid) = self.last_strain_bid {
+                    if let Bid::RealBid(contract) = self.last_strain_bid {
                         Some(Contract::BidContract(BidContract {
-                            strain: strain_bid.strain,
-                            level: strain_bid.level,
+                            contract,
                             modifier,
                             declarer,
                         }))

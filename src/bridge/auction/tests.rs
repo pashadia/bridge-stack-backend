@@ -3,6 +3,7 @@ use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, RE
 use crate::bridge::contract::Contract::PassedOut;
 use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::bridge::BridgeDirection;
+use std::convert::{TryFrom, TryInto};
 
 #[test]
 fn can_pass_out() -> Result<(), Error> {
@@ -214,10 +215,7 @@ fn generate_contract() -> Result<(), Error> {
     assert_eq!(auction.contract(), Some(Contract::PassedOut));
 
     let mut auction = Auction::new(BridgeDirection::S);
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::Two,
-        strain: Strain::Spades,
-    }))?;
+    auction.bid(RealBid(StrainBid::try_from("2s").unwrap()))?;
     auction.bid(PASS)?;
     auction.bid(PASS)?;
     assert_eq!(auction.contract(), None);
@@ -226,8 +224,7 @@ fn generate_contract() -> Result<(), Error> {
     assert_eq!(
         auction.contract(),
         Some(Contract::BidContract(BidContract {
-            strain: Strain::Spades,
-            level: ContractLevel::Two,
+            contract: "2s".try_into().unwrap(),
             modifier: Modifier::Pass,
             declarer: BridgeDirection::S
         }))
