@@ -7,7 +7,7 @@ use std::convert::TryFrom;
 pub struct Auction {
     dealer: BridgeDirection,
     bids: Vec<Bid>,
-    last_strain_bid: Bid,
+    last_strain_bid: Option<StrainBid>,
 }
 
 impl Auction {
@@ -15,7 +15,7 @@ impl Auction {
         Auction {
             dealer,
             bids: vec![],
-            last_strain_bid: PASS,
+            last_strain_bid: None,
         }
     }
 
@@ -24,7 +24,7 @@ impl Auction {
             PASS => Ok(self.bids.push(bid)),
             Bid::RealBid(real_bid) => {
                 if self.is_bid_sufficient(real_bid) {
-                    self.last_strain_bid = bid;
+                    self.last_strain_bid = Some(real_bid);
                     Ok(self.bids.push(bid))
                 } else {
                     Err(Error::InsufficientBid)
@@ -61,9 +61,8 @@ impl Auction {
 
     fn is_bid_sufficient(&self, other_bid: StrainBid) -> bool {
         match self.last_strain_bid {
-            Bid::RealBid(this_bid) => other_bid > this_bid,
-            PASS => true,
-            _ => unreachable!("Last strain can't be a double/redouble"),
+            Some(this_bid) => other_bid > this_bid,
+            None => true,
         }
     }
 
@@ -93,23 +92,22 @@ impl Auction {
 
     pub fn contract(&self) -> Option<Contract> {
         if self.is_completed() {
-            match self.last_meaningful_bid() {
+            match self.last_strain_bid {
                 None => Some(Contract::PassedOut),
-                Some(bid) => {
-                    let modifier = match bid {
-                        Bid::RealBid(_) => Modifier::Pass,
-                        Bid::Other(modifier) => modifier,
+                Some(contract) => {
+                    let modifier: Modifier = match self.last_meaningful_bid() {
+                        None => unreachable!("We should have a meaningful bid by now"),
+                        Some(last_bid) => match last_bid {
+                            Bid::RealBid(_) => Modifier::Pass,
+                            Bid::Other(modifier) => modifier,
+                        },
                     };
-                    let declarer = self.dealer;
-                    if let Bid::RealBid(contract) = self.last_strain_bid {
-                        Some(Contract::BidContract(BidContract {
-                            contract,
-                            modifier,
-                            declarer,
-                        }))
-                    } else {
-                        unreachable!("last strain should really be a bid")
-                    }
+                    let declarer = self.dealer; // FIXME
+                    Some(Contract::BidContract(BidContract {
+                        contract,
+                        modifier,
+                        declarer,
+                    }))
                 }
             }
         } else {

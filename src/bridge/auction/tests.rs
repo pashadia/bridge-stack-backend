@@ -51,7 +51,7 @@ fn disallow_insufficient() -> Result<(), Error> {
     }))?;
 
     auction.bid(PASS)?;
-    assert_ne!(auction.last_strain_bid, PASS); // make sure only strains are saved
+    assert!(auction.last_strain_bid.is_some());
 
     auction.bid(RealBid(StrainBid {
         level: ContractLevel::One,
@@ -65,7 +65,7 @@ fn disallow_insufficient() -> Result<(), Error> {
         .unwrap_err();
     assert_eq!(insufficient, InsufficientBid);
 
-    if let RealBid(strain_bid) = auction.last_strain_bid {
+    if let Some(strain_bid) = auction.last_strain_bid {
         assert_eq!(strain_bid.strain, Strain::Spades)
     } else {
         panic!("We should have something other than Pass by now")
