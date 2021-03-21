@@ -1,5 +1,5 @@
 use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
-use crate::bridge::BridgeDirection;
+use crate::bridge::{turns, BridgeDirection};
 use num_traits::FromPrimitive;
 use std::convert::TryFrom;
 
@@ -8,6 +8,7 @@ pub struct Auction {
     dealer: BridgeDirection,
     bids: Vec<Bid>,
     last_strain_bid: Option<StrainBid>,
+    last_bidder: Option<BridgeDirection>,
 }
 
 impl Auction {
@@ -16,6 +17,7 @@ impl Auction {
             dealer,
             bids: vec![],
             last_strain_bid: None,
+            last_bidder: None,
         }
     }
 
@@ -25,6 +27,7 @@ impl Auction {
             Bid::RealBid(real_bid) => {
                 if self.is_bid_sufficient(real_bid) {
                     self.last_strain_bid = Some(real_bid);
+                    self.last_bidder = Some(self.whose_turn_is_it());
                     Ok(self.bids.push(bid))
                 } else {
                     Err(Error::InsufficientBid)
@@ -90,6 +93,11 @@ impl Auction {
         self.bids.iter().rev().take_while(|&&b| b == PASS).count()
     }
 
+    fn whose_turn_is_it(&self) -> BridgeDirection {
+        let delta = self.bids.len() % 4;
+        turns(self.dealer).skip(delta).next().unwrap()
+    }
+
     pub fn contract(&self) -> Option<Contract> {
         if self.is_completed() {
             match self.last_strain_bid {
@@ -102,7 +110,9 @@ impl Auction {
                         Bid::RealBid(_) => Modifier::Pass,
                         Bid::Other(modifier) => modifier,
                     };
-                    let declarer = self.dealer; // FIXME
+                    let declarer = self
+                        .last_bidder
+                        .expect("Bids have been made, we should have a bidder");
                     Some(Contract::BidContract(BidContract {
                         contract,
                         modifier,

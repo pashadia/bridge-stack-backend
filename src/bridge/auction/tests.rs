@@ -265,6 +265,28 @@ mod contract {
 
         Ok(())
     }
+
+    #[test]
+    fn other_declarer() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::W);
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(RealBid(StrainBid::try_from("4d").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "4D".try_into().unwrap(),
+                modifier: Modifier::Pass,
+                declarer: BridgeDirection::E
+            }))
+        );
+
+        Ok(())
+    }
 }
 
 mod basic {

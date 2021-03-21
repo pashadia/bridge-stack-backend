@@ -63,6 +63,27 @@ pub enum Vulnerability {
     NONE,
 }
 
+pub struct Turns {
+    last: BridgeDirection,
+}
+impl Iterator for Turns {
+    type Item = BridgeDirection;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = self.last;
+        self.last = match self.last {
+            BridgeDirection::N => BridgeDirection::E,
+            BridgeDirection::E => BridgeDirection::S,
+            BridgeDirection::S => BridgeDirection::W,
+            BridgeDirection::W => BridgeDirection::N,
+        };
+        Some(res)
+    }
+}
+pub fn turns(dealer: BridgeDirection) -> Turns {
+    Turns { last: dealer }
+}
+
 impl Vulnerability {
     pub fn is_vulnerable(self, who: BridgeDirection) -> bool {
         match self {
