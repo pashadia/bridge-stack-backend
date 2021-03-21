@@ -239,6 +239,7 @@ fn generate_contract() -> Result<(), Error> {
 mod basic {
     use crate::bridge::auction::StrainBid;
     use crate::bridge::contract::{ContractLevel, Strain};
+    use std::convert::TryFrom;
 
     #[test]
     fn comparisons() {
@@ -251,5 +252,32 @@ mod basic {
             strain: Strain::Spades,
         };
         assert!(&two_clubs < &three_spades);
+    }
+
+    #[test]
+    fn read_strain_bid() -> Result<(), &'static str> {
+        assert_eq!(
+            StrainBid::try_from("1c")?,
+            StrainBid {
+                level: ContractLevel::One,
+                strain: Strain::Clubs
+            }
+        );
+        assert_eq!(
+            StrainBid::try_from("2c")?,
+            StrainBid {
+                level: ContractLevel::Two,
+                strain: Strain::Clubs
+            }
+        );
+        assert_eq!(
+            StrainBid::try_from("4s")?,
+            StrainBid {
+                level: ContractLevel::Four,
+                strain: Strain::Spades
+            }
+        );
+
+        Ok(())
     }
 }

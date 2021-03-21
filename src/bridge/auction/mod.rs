@@ -1,5 +1,7 @@
 use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::bridge::BridgeDirection;
+use num_traits::FromPrimitive;
+use std::convert::TryFrom;
 
 #[derive(Debug)]
 pub struct Auction {
@@ -129,8 +131,38 @@ const REDOUBLE: Bid = Bid::Other(Modifier::Redouble);
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StrainBid {
-    level: ContractLevel,
-    strain: Strain,
+    pub(crate) level: ContractLevel,
+    pub(crate) strain: Strain,
+}
+
+impl TryFrom<&str> for StrainBid {
+    type Error = &'static str;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let mut chars = value.bytes();
+        let level = chars
+            .next()
+            .map(|code| code - '0' as u8)
+            .and_then(FromPrimitive::from_u8)
+            .ok_or("Should be between 1 and 7")?;
+
+        let strain = chars
+            .next()
+            .map(char::from)
+            .as_ref()
+            .map(char::to_ascii_uppercase)
+            .and_then(|c| match c {
+                'N' => Some(Strain::NoTrump),
+                'S' => Some(Strain::Spades),
+                'H' => Some(Strain::Hearts),
+                'D' => Some(Strain::Diamonds),
+                'C' => Some(Strain::Clubs),
+                _ => None,
+            })
+            .ok_or("Should be either a suit or notrump")?;
+
+        Ok(Self { level, strain })
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]

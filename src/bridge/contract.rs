@@ -1,3 +1,5 @@
+use num_derive::FromPrimitive;
+
 use crate::bridge::contract::util::{over_score, trick_score};
 use crate::bridge::{BridgeDirection, Vulnerability};
 use std::cmp::max;
@@ -115,7 +117,7 @@ pub enum Strain {
     NoTrump,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, FromPrimitive)]
 pub enum ContractLevel {
     One = 1,
     Two = 2,
