@@ -1,9 +1,8 @@
 use crate::bridge::auction::Error::InsufficientBid;
 use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
 use crate::bridge::contract::Contract::PassedOut;
-use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
+use crate::bridge::contract::{ContractLevel, Strain};
 use crate::bridge::BridgeDirection;
-use std::convert::{TryFrom, TryInto};
 
 #[test]
 fn can_pass_out() -> Result<(), Error> {
@@ -203,34 +202,69 @@ fn auction_finished() -> Result<(), Error> {
     Ok(())
 }
 
-#[test]
-fn generate_contract() -> Result<(), Error> {
-    let mut auction = Auction::new(BridgeDirection::S);
-    assert_eq!(auction.contract(), None);
-    auction.bid(PASS)?;
-    auction.bid(PASS)?;
-    auction.bid(PASS)?;
-    assert_eq!(auction.contract(), None);
-    auction.bid(PASS)?;
-    assert_eq!(auction.contract(), Some(Contract::PassedOut));
+mod contract {
+    use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
+    use crate::bridge::contract::{BidContract, Contract, Modifier};
+    use crate::bridge::BridgeDirection;
+    use std::convert::{TryFrom, TryInto};
 
-    let mut auction = Auction::new(BridgeDirection::S);
-    auction.bid(RealBid(StrainBid::try_from("2s").unwrap()))?;
-    auction.bid(PASS)?;
-    auction.bid(PASS)?;
-    assert_eq!(auction.contract(), None);
+    #[test]
+    fn passout() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::S);
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), Some(Contract::PassedOut));
 
-    auction.bid(PASS)?;
-    assert_eq!(
-        auction.contract(),
-        Some(Contract::BidContract(BidContract {
-            contract: "2s".try_into().unwrap(),
-            modifier: Modifier::Pass,
-            declarer: BridgeDirection::S
-        }))
-    );
+        Ok(())
+    }
 
-    Ok(())
+    #[test]
+    fn basic_contract() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::S);
+        auction.bid(RealBid(StrainBid::try_from("2s").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), None);
+
+        auction.bid(PASS)?;
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "2s".try_into().unwrap(),
+                modifier: Modifier::Pass,
+                declarer: BridgeDirection::S
+            }))
+        );
+
+        Ok(())
+    }
+    #[test]
+    fn doubled_contract() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::S);
+        auction.bid(RealBid(StrainBid::try_from("3n").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(DOUBLE)?;
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "3N".try_into().unwrap(),
+                modifier: Modifier::Double,
+                declarer: BridgeDirection::S
+            }))
+        );
+
+        Ok(())
+    }
 }
 
 mod basic {

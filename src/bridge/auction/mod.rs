@@ -95,12 +95,12 @@ impl Auction {
             match self.last_strain_bid {
                 None => Some(Contract::PassedOut),
                 Some(contract) => {
-                    let modifier: Modifier = match self.last_meaningful_bid() {
-                        None => unreachable!("We should have a meaningful bid by now"),
-                        Some(last_bid) => match last_bid {
-                            Bid::RealBid(_) => Modifier::Pass,
-                            Bid::Other(modifier) => modifier,
-                        },
+                    let modifier: Modifier = match self
+                        .last_meaningful_bid()
+                        .expect("We should have a meaningful bid by now")
+                    {
+                        Bid::RealBid(_) => Modifier::Pass,
+                        Bid::Other(modifier) => modifier,
                     };
                     let declarer = self.dealer; // FIXME
                     Some(Contract::BidContract(BidContract {
