@@ -267,6 +267,39 @@ mod contract {
     }
 
     #[test]
+    fn redoubled_contract() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::S);
+
+        auction.bid(RealBid(StrainBid::try_from("1n").unwrap()))?;
+        auction.bid(DOUBLE)?;
+        auction.bid(PASS)?;
+        auction.bid(REDOUBLE).unwrap_err(); // just checking
+        auction.bid(RealBid(StrainBid::try_from("2n").unwrap()))?;
+
+        auction.bid(DOUBLE)?;
+        auction.bid(RealBid(StrainBid::try_from("3n").unwrap()))?;
+        auction.bid(DOUBLE)?;
+        auction.bid(REDOUBLE)?;
+
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), None);
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "3N".try_into().unwrap(),
+                modifier: Modifier::Redouble,
+                declarer: BridgeDirection::E
+            }))
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn declarer_is_first_to_name_contract() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::S);
         auction.bid(RealBid(StrainBid::try_from("1nt").unwrap()))?;
