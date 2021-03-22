@@ -267,7 +267,30 @@ mod contract {
     }
 
     #[test]
-    fn other_declarer() -> Result<(), Error> {
+    fn declarer_is_first_to_name_contract() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::S);
+        auction.bid(RealBid(StrainBid::try_from("1nt").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(RealBid(StrainBid::try_from("3nt").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(auction.contract(), None);
+
+        auction.bid(PASS)?;
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "3N".try_into().unwrap(),
+                modifier: Modifier::Pass,
+                declarer: BridgeDirection::S
+            }))
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn other_declarers() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::W);
         auction.bid(PASS)?;
         auction.bid(PASS)?;
@@ -285,6 +308,47 @@ mod contract {
             }))
         );
 
+        let mut auction = Auction::new(BridgeDirection::W);
+        auction.bid(RealBid(StrainBid::try_from("1d").unwrap()))?;
+        auction.bid(RealBid(StrainBid::try_from("1s").unwrap()))?;
+        auction.bid(RealBid(StrainBid::try_from("2d").unwrap()))?;
+        auction.bid(RealBid(StrainBid::try_from("2h").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(RealBid(StrainBid::try_from("4h").unwrap()))?;
+        // auction.bid(DOUBLE)?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "4H".try_into().unwrap(),
+                modifier: Modifier::Pass,
+                declarer: BridgeDirection::S
+            }))
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn declarer_did_actually_win_auction() -> Result<(), Error> {
+        let mut auction = Auction::new(BridgeDirection::N);
+        auction.bid(RealBid(StrainBid::try_from("1d").unwrap()))?;
+        auction.bid(RealBid(StrainBid::try_from("2d").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(RealBid(StrainBid::try_from("3d").unwrap()))?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        auction.bid(PASS)?;
+        assert_eq!(
+            auction.contract(),
+            Some(Contract::BidContract(BidContract {
+                contract: "3d".try_into().unwrap(),
+                modifier: Modifier::Pass,
+                declarer: BridgeDirection::E
+            }))
+        );
         Ok(())
     }
 }

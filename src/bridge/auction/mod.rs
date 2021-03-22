@@ -110,9 +110,27 @@ impl Auction {
                         Bid::RealBid(_) => Modifier::Pass,
                         Bid::Other(modifier) => modifier,
                     };
-                    let declarer = self
+
+                    let contract_set_by = self
                         .last_bidder
                         .expect("Bids have been made, we should have a bidder");
+                    let declarer: BridgeDirection = self
+                        .bids
+                        .iter()
+                        .zip(turns(self.dealer))
+                        .filter_map(|(bid, bidder)| match bid {
+                            Bid::RealBid(StrainBid { strain, .. })
+                                if *strain == contract.strain =>
+                            {
+                                Some(bidder)
+                            }
+                            _ => None,
+                        })
+                        .find(|&bidder| {
+                            bidder == contract_set_by || bidder == contract_set_by.partner()
+                        })
+                        .expect("Contracts tend to have a declarer");
+
                     Some(Contract::BidContract(BidContract {
                         contract,
                         modifier,

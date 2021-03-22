@@ -55,6 +55,17 @@ pub enum BridgeDirection {
     W,
 }
 
+impl BridgeDirection {
+    fn partner(&self) -> BridgeDirection {
+        match self {
+            BridgeDirection::N => BridgeDirection::S,
+            BridgeDirection::E => BridgeDirection::W,
+            BridgeDirection::S => BridgeDirection::N,
+            BridgeDirection::W => BridgeDirection::E,
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Debug)]
 pub enum Vulnerability {
     NS,
@@ -133,7 +144,7 @@ impl Default for BoardState {
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::{Board, BridgeDirection, Vulnerability};
+    use crate::bridge::{turns, Board, BridgeDirection, Vulnerability};
 
     #[test]
     fn new_board() {
@@ -162,5 +173,20 @@ mod tests {
         assert_eq!(Board::new_with_number(2).dealer(), BridgeDirection::E);
         assert_eq!(Board::new_with_number(31).dealer(), BridgeDirection::S);
         assert_eq!(Board::new_with_number(136).dealer(), BridgeDirection::W);
+    }
+
+    #[test]
+    fn test_turns() {
+        let mut t = turns(BridgeDirection::N);
+        assert_eq!(t.next(), Some(BridgeDirection::N));
+        assert_eq!(t.next(), Some(BridgeDirection::E));
+        assert_eq!(t.next(), Some(BridgeDirection::S));
+        assert_eq!(t.next(), Some(BridgeDirection::W));
+        assert_eq!(t.next(), Some(BridgeDirection::N));
+        assert_eq!(t.next(), Some(BridgeDirection::E));
+        let mut tw = turns(BridgeDirection::W);
+        assert_eq!(tw.next(), Some(BridgeDirection::W));
+        assert_eq!(tw.next(), Some(BridgeDirection::N));
+        assert_eq!(tw.next(), Some(BridgeDirection::E));
     }
 }
