@@ -6,6 +6,10 @@ mod contract;
 use contract::Contract;
 
 mod auction;
+use auction::Auction;
+
+mod cardplay;
+use cardplay::Cardplay;
 
 #[derive(Default)]
 pub struct Board {
