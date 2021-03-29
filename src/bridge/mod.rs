@@ -78,6 +78,7 @@ pub enum Vulnerability {
     NONE,
 }
 
+#[derive(Debug)]
 pub struct Turns {
     last: BridgeDirection,
 }
@@ -135,8 +136,9 @@ impl BoardPlay {
 
 enum BoardState {
     NotStarted,
-    Bidding,
-    Playing,
+    Bidding(Auction),
+    OnLead(Auction),
+    Playing(Auction, Contract, Cardplay),
     Completed,
 }
 

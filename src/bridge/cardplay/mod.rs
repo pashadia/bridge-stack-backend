@@ -1,18 +1,36 @@
 use crate::bridge::contract::BidContract;
 use crate::bridge::Board;
 
-pub struct Cardplay;
+mod trick;
+use trick::CompletedTrick;
+
+pub struct Cardplay {
+    tricks: Vec<CompletedTrick>,
+    state: PlayState,
+}
 
 impl Cardplay {
     fn start(_board: &Board, _contract: BidContract) -> Self {
-        Self
+        Self {
+            tricks: vec![],
+            state: PlayState::BeforeLead,
+        }
     }
+
+    fn tricks_played(&self) -> usize {
+        self.tricks.len()
+    }
+}
+
+#[derive(Eq, PartialEq, Debug)]
+enum PlayState {
+    BeforeLead,
 }
 
 #[cfg(test)]
 mod tests {
     use crate::bridge::auction::StrainBid;
-    use crate::bridge::cardplay::Cardplay;
+    use crate::bridge::cardplay::{Cardplay, PlayState};
     use crate::bridge::contract::{BidContract, Modifier};
     use crate::bridge::{Board, BridgeDirection};
     use std::convert::TryFrom;
@@ -25,8 +43,10 @@ mod tests {
             modifier: Modifier::Pass,
             declarer: BridgeDirection::N,
         };
-        dbg!(&board.inner.east.len());
-        let _play = Cardplay::start(&board, contract);
+        let play = Cardplay::start(&board, contract);
+        assert_eq!(play.tricks_played(), 0);
+        assert_eq!(play.state, PlayState::BeforeLead);
+
         Ok(())
     }
 }
