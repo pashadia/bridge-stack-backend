@@ -1,5 +1,5 @@
-use crate::bridge::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
-use crate::bridge::{turns, BridgeDirection};
+use crate::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
+use crate::{turns, BridgeDirection};
 use num_traits::FromPrimitive;
 use std::convert::TryFrom;
 

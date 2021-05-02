@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "bridge-backend"
 version = "0.1.0"
 authors = ["Bogdan Agica <bogdan.agica@gmail.com>"]
 edition = "2018"

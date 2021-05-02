@@ -1,4 +1,4 @@
-use crate::bridge::{turns, BridgeDirection};
+use crate::{turns, BridgeDirection};
 use bridge_deck::Card;
 
 #[derive(Eq, PartialEq, Debug)]
@@ -29,8 +29,8 @@ impl CompletedTrick {
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::cardplay::trick::CompletedTrick;
-    use crate::bridge::BridgeDirection;
+    use crate::cardplay::trick::CompletedTrick;
+    use crate::BridgeDirection;
     use bridge_deck::Card;
 
     #[test]

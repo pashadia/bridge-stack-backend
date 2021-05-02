@@ -1,8 +1,8 @@
-use crate::bridge::auction::Error::InsufficientBid;
-use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
-use crate::bridge::contract::Contract::PassedOut;
-use crate::bridge::contract::{ContractLevel, Strain};
-use crate::bridge::BridgeDirection;
+use crate::auction::Error::InsufficientBid;
+use crate::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
+use crate::contract::Contract::PassedOut;
+use crate::contract::{ContractLevel, Strain};
+use crate::BridgeDirection;
 
 #[test]
 fn can_pass_out() -> Result<(), Error> {
@@ -203,9 +203,9 @@ fn auction_finished() -> Result<(), Error> {
 }
 
 mod contract {
-    use crate::bridge::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
-    use crate::bridge::contract::{BidContract, Contract, Modifier};
-    use crate::bridge::BridgeDirection;
+    use crate::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
+    use crate::contract::{BidContract, Contract, Modifier};
+    use crate::BridgeDirection;
     use std::convert::{TryFrom, TryInto};
 
     #[test]
@@ -387,8 +387,8 @@ mod contract {
 }
 
 mod basic {
-    use crate::bridge::auction::StrainBid;
-    use crate::bridge::contract::{ContractLevel, Strain};
+    use crate::auction::StrainBid;
+    use crate::contract::{ContractLevel, Strain};
     use std::convert::TryFrom;
 
     #[test]

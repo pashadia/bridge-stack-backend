@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![warn(missing_docs)]
 
 mod contract;
 use contract::Contract;
@@ -115,7 +116,7 @@ impl Vulnerability {
     }
 }
 
-pub(crate) struct BoardPlay {
+pub struct BoardPlay {
     board: Board,
     state: BoardState,
     table_number: usize,
@@ -163,10 +164,10 @@ impl Default for BoardState {
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::{turns, BridgeDirection};
+    use crate::{turns, BridgeDirection};
 
     mod board_creation {
-        use crate::bridge::{Board, BridgeDirection, Vulnerability};
+        use crate::{Board, BridgeDirection, Vulnerability};
 
         #[test]
         fn new_board() {

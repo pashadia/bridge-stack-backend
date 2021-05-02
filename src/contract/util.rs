@@ -1,4 +1,4 @@
-use crate::bridge::contract::{BidContract, Modifier, Strain};
+use crate::contract::{BidContract, Modifier, Strain};
 
 pub fn trick_score(strain: Strain, how_many: usize) -> usize {
     match strain {

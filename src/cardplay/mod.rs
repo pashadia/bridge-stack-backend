@@ -1,5 +1,5 @@
-use crate::bridge::contract::BidContract;
-use crate::bridge::Board;
+use crate::contract::BidContract;
+use crate::Board;
 
 mod trick;
 use trick::CompletedTrick;
@@ -29,10 +29,10 @@ enum PlayState {
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::auction::StrainBid;
-    use crate::bridge::cardplay::{Cardplay, PlayState};
-    use crate::bridge::contract::{BidContract, Modifier};
-    use crate::bridge::{Board, BridgeDirection};
+    use crate::auction::StrainBid;
+    use crate::cardplay::{Cardplay, PlayState};
+    use crate::contract::{BidContract, Modifier};
+    use crate::{Board, BridgeDirection};
     use std::convert::TryFrom;
 
     #[test]

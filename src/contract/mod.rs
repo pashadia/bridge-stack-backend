@@ -1,8 +1,8 @@
 use num_derive::FromPrimitive;
 
-use crate::bridge::auction::StrainBid;
-use crate::bridge::contract::util::{over_score, trick_score};
-use crate::bridge::{BridgeDirection, Vulnerability};
+use crate::auction::StrainBid;
+use crate::contract::util::{over_score, trick_score};
+use crate::{BridgeDirection, Vulnerability};
 use std::cmp::max;
 
 mod util;
@@ -147,8 +147,8 @@ pub enum Modifier {
 #[cfg(test)]
 mod tests {
 
-    use crate::bridge::contract::{BidContract, Contract, Modifier};
-    use crate::bridge::{BridgeDirection, Vulnerability};
+    use crate::contract::{BidContract, Contract, Modifier};
+    use crate::{BridgeDirection, Vulnerability};
     use std::convert::TryInto;
 
     #[test]
@@ -401,7 +401,7 @@ mod tests {
     }
 
     mod basic {
-        use crate::bridge::contract::{ContractLevel, Strain};
+        use crate::contract::{ContractLevel, Strain};
 
         #[test]
         fn comparisons() {
