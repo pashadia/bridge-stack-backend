@@ -1,8 +1,5 @@
 #![allow(dead_code)]
 
-mod board;
-use board::BridgeBoard;
-
 mod contract;
 use contract::Contract;
 
@@ -10,24 +7,31 @@ mod auction;
 use auction::Auction;
 
 mod cardplay;
+
+use bridge_deck::Cards;
 use cardplay::Cardplay;
 
 pub struct Board {
-    inner: BridgeBoard,
+    pub north: Cards,
+    pub east: Cards,
+    pub south: Cards,
+    pub west: Cards,
     number: usize,
 }
 
 impl Board {
     pub fn new() -> Self {
-        Self {
-            inner: BridgeBoard::deal(),
-            number: 1,
-        }
+        Self::new_with_number(1)
     }
 
     pub fn new_with_number(number: usize) -> Self {
+        let mut full_deck = Cards::ALL;
+
         Self {
-            inner: BridgeBoard::deal(),
+            north: full_deck.pick(13).expect("Should be able to get 13 cards"),
+            east: full_deck.pick(13).expect("Should be able to get 13 cards"),
+            south: full_deck.pick(13).expect("Should be able to get 13 cards"),
+            west: full_deck.pick(13).expect("Should be able to get 13 cards"),
             number,
         }
     }
@@ -159,35 +163,59 @@ impl Default for BoardState {
 
 #[cfg(test)]
 mod tests {
-    use crate::bridge::{turns, Board, BridgeDirection, Vulnerability};
+    use crate::bridge::{turns, BridgeDirection};
 
-    #[test]
-    fn new_board() {
-        let board = Board::new();
-        assert_eq!(board.number, 1);
+    mod board_creation {
+        use crate::bridge::{Board, BridgeDirection, Vulnerability};
 
-        let board = Board::new_with_number(7);
-        assert_eq!(board.number, 7);
-    }
+        #[test]
+        fn new_board() {
+            let board = Board::new();
+            assert_eq!(board.number, 1);
 
-    #[test]
-    fn vulnerability() {
-        assert_eq!(
-            Board::new_with_number(7).vulnerability(),
-            Vulnerability::ALL
-        );
-        assert_eq!(
-            Board::new_with_number(99).vulnerability(),
-            Vulnerability::EW
-        );
-    }
+            let board = Board::new_with_number(7);
+            assert_eq!(board.number, 7);
+        }
 
-    #[test]
-    fn dealer() {
-        assert_eq!(Board::new().dealer(), BridgeDirection::N);
-        assert_eq!(Board::new_with_number(2).dealer(), BridgeDirection::E);
-        assert_eq!(Board::new_with_number(31).dealer(), BridgeDirection::S);
-        assert_eq!(Board::new_with_number(136).dealer(), BridgeDirection::W);
+        #[test]
+        fn all_cards_should_exist() {
+            let board = Board::new();
+            let cards = board
+                .north
+                .union(board.east)
+                .union(board.south)
+                .union(board.west);
+            assert_eq!(cards.len(), 52)
+        }
+
+        #[test]
+        fn correct_number_of_cards() {
+            let board = Board::new();
+            assert_eq!(board.north.len(), 13);
+            assert_eq!(board.east.len(), 13);
+            assert_eq!(board.south.len(), 13);
+            assert_eq!(board.west.len(), 13);
+        }
+
+        #[test]
+        fn vulnerability() {
+            assert_eq!(
+                Board::new_with_number(7).vulnerability(),
+                Vulnerability::ALL
+            );
+            assert_eq!(
+                Board::new_with_number(99).vulnerability(),
+                Vulnerability::EW
+            );
+        }
+
+        #[test]
+        fn dealer() {
+            assert_eq!(Board::new().dealer(), BridgeDirection::N);
+            assert_eq!(Board::new_with_number(2).dealer(), BridgeDirection::E);
+            assert_eq!(Board::new_with_number(31).dealer(), BridgeDirection::S);
+            assert_eq!(Board::new_with_number(136).dealer(), BridgeDirection::W);
+        }
     }
 
     #[test]
@@ -199,9 +227,13 @@ mod tests {
         assert_eq!(t.next(), Some(BridgeDirection::W));
         assert_eq!(t.next(), Some(BridgeDirection::N));
         assert_eq!(t.next(), Some(BridgeDirection::E));
+
         let mut tw = turns(BridgeDirection::W);
         assert_eq!(tw.next(), Some(BridgeDirection::W));
         assert_eq!(tw.next(), Some(BridgeDirection::N));
         assert_eq!(tw.next(), Some(BridgeDirection::E));
+        assert_eq!(t.next(), Some(BridgeDirection::S));
+        assert_eq!(t.next(), Some(BridgeDirection::W));
+        assert_eq!(t.next(), Some(BridgeDirection::N));
     }
 }
