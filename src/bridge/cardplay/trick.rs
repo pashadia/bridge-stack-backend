@@ -1,5 +1,5 @@
 use crate::bridge::{turns, BridgeDirection};
-use cardpack::Card;
+use bridge_deck::Card;
 
 #[derive(Eq, PartialEq, Debug)]
 pub struct CompletedTrick {
@@ -31,26 +31,21 @@ impl CompletedTrick {
 mod tests {
     use crate::bridge::cardplay::trick::CompletedTrick;
     use crate::bridge::BridgeDirection;
-    use cardpack::{Card, FIVE, FOUR, HEARTS, THREE, TWO};
+    use bridge_deck::Card;
 
     #[test]
     fn new() {
         let trick = CompletedTrick::new(
             BridgeDirection::S,
-            vec![
-                Card::new(TWO, HEARTS),
-                Card::new(THREE, HEARTS),
-                Card::new(FOUR, HEARTS),
-                Card::new(FIVE, HEARTS),
-            ],
+            vec![Card::H2, Card::H3, Card::H4, Card::H5],
         );
         assert_eq!(
             trick,
             CompletedTrick {
-                north: Card::new(FOUR, HEARTS),
-                east: Card::new(FIVE, HEARTS),
-                south: Card::new(TWO, HEARTS),
-                west: Card::new(THREE, HEARTS),
+                north: Card::H4,
+                east: Card::H5,
+                south: Card::H2,
+                west: Card::H3,
             }
         );
     }

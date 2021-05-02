@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
-use cardpack::BridgeBoard;
+mod board;
+use board::BridgeBoard;
 
 mod contract;
 use contract::Contract;
@@ -11,7 +12,6 @@ use auction::Auction;
 mod cardplay;
 use cardplay::Cardplay;
 
-#[derive(Default)]
 pub struct Board {
     inner: BridgeBoard,
     number: usize,
@@ -111,7 +111,6 @@ impl Vulnerability {
     }
 }
 
-#[derive(Default)]
 pub(crate) struct BoardPlay {
     board: Board,
     state: BoardState,
@@ -121,6 +120,16 @@ pub(crate) struct BoardPlay {
 }
 
 impl BoardPlay {
+    pub fn new() -> Self {
+        Self {
+            board: Board::new(),
+            state: Default::default(),
+            table_number: 0,
+            contract: None,
+            tricks_taken: 0,
+        }
+    }
+
     pub fn start_play(self) {}
 
     pub fn score(self) -> Option<i32> {

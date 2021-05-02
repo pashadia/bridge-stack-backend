@@ -1,7 +1,7 @@
 mod bridge;
 
 fn main() {
-    let board = bridge::BoardPlay::default();
+    let board = bridge::BoardPlay::new();
 
     board.start_play();
 
