@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn start_new_board() -> Result<(), ()> {
-        let board = Board::new_with_number(3);
+        let board = Board::new(3);
         let contract = BidContract {
             contract: StrainBid::try_from("2h").unwrap(),
             modifier: Modifier::Pass,
