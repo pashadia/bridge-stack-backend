@@ -1,5 +1,6 @@
+use crate::auction::constants::*;
 use crate::auction::Error::InsufficientBid;
-use crate::auction::{Bid::*, *};
+use crate::auction::{Auction, Error};
 use crate::contract::Contract::PassedOut;
 use crate::contract::{ContractLevel, Strain};
 use crate::BridgeDirection;
@@ -104,10 +105,7 @@ fn redoubles() -> Result<(), Error> {
     auction.bid(PASS)?;
     assert_eq!(auction.bid(REDOUBLE).unwrap_err(), Error::CantRedouble);
 
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::Three,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(THREE_DIAMONDS)?;
     auction.bid(PASS)?;
     auction.bid(PASS)?;
     auction.bid(DOUBLE)?;
@@ -159,10 +157,12 @@ fn auction_finished() -> Result<(), Error> {
 }
 
 mod contract {
+    use std::convert::{TryFrom, TryInto};
+
+    use crate::auction::constants::*;
     use crate::auction::{Bid::*, *};
     use crate::contract::{BidContract, Contract, Modifier};
     use crate::BridgeDirection;
-    use std::convert::{TryFrom, TryInto};
 
     #[test]
     fn passout() -> Result<(), Error> {
@@ -342,9 +342,10 @@ mod contract {
 }
 
 mod basic {
+    use std::convert::TryFrom;
+
     use crate::auction::StrainBid;
     use crate::contract::{ContractLevel, Strain};
-    use std::convert::TryFrom;
 
     #[test]
     fn comparisons() {

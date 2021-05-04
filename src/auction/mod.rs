@@ -1,15 +1,23 @@
+//! This module defines the rules of a Bridge auction
+//!
+//! Its' main struct is [`Auction`] which defines the bridge auction state machine. See its documentation for an usage example.
+
+use std::convert::TryFrom;
+
+use num_traits::FromPrimitive;
+
+use constants::*;
+
 use crate::contract::{BidContract, Contract, ContractLevel, Modifier, Strain};
 use crate::{turns, BridgeDirection};
-use num_traits::FromPrimitive;
-use std::convert::TryFrom;
 
 /// A bridge auction state machine
 ///
 /// # Basic usage:
 /// ```
 /// # use bridge_backend::{Auction, BridgeDirection};
-/// # use bridge_backend::auction::{Bid, StrainBid, PASS, ONE_NOTRUMP, THREE_NOTRUMP, Error};
-/// # use std::convert::TryFrom;
+/// # use bridge_backend::auction::{Error, constants::*};
+///
 /// # fn main() -> Result<(), Error> {
 /// let mut auction = Auction::new(BridgeDirection::W);
 ///
@@ -45,6 +53,21 @@ impl Auction {
         }
     }
 
+    /// Represents a bid made by the current player.
+    ///
+    /// Returns `Ok(())` if the bid is sufficient and accepted. It returns an `auction::Error` variant otherwise.
+    /// # Example:
+    /// ```
+    /// # use bridge_backend::{Auction, BridgeDirection};
+    /// # use bridge_backend::auction::constants::*;
+    /// let mut auction = Auction::new(BridgeDirection::S);
+    /// auction.bid(TWO_SPADES)?;
+    /// auction.bid(DOUBLE)?;
+    /// auction.bid(REDOUBLE)?;
+    /// auction.bid(PASS)?;
+    /// ```
+    ///
+    /// Note: By definition, the bid is made by the player whose turn it is. Out of turn bids are impossible to model.
     pub fn bid(&mut self, bid: Bid) -> Result<(), Error> {
         match bid {
             PASS => Ok(self.bids.push(bid)),
@@ -185,15 +208,6 @@ pub enum Bid {
     Other(Modifier),
 }
 
-/// Represents a Pass bid.
-pub const PASS: Bid = Bid::Other(Modifier::Pass);
-
-/// Represents a Double bid.
-pub const DOUBLE: Bid = Bid::Other(Modifier::Double);
-
-/// Represents a Redouble bid.
-pub const REDOUBLE: Bid = Bid::Other(Modifier::Redouble);
-
 /// Represents the bid of a strain by a player. Usually used through one of the named constants, e.g. [`ONE_CLUB`]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct StrainBid {
@@ -231,57 +245,7 @@ impl TryFrom<&str> for StrainBid {
     }
 }
 
-macro_rules! make_bid {
-    ($name:ident, $level:ident, $strain:ident) => {
-        #[doc = "Constant representing the named bid."]
-        pub const $name: Bid = Bid::RealBid(StrainBid {
-            level: ContractLevel::$level,
-            strain: Strain::$strain,
-        });
-    };
-}
-
-make_bid!(ONE_CLUB, One, Clubs);
-make_bid!(ONE_DIAMOND, One, Diamonds);
-make_bid!(ONE_HEART, One, Hearts);
-make_bid!(ONE_SPADE, One, Spades);
-make_bid!(ONE_NOTRUMP, One, NoTrump);
-
-make_bid!(TWO_CLUBS, Two, Clubs);
-make_bid!(TWO_DIAMONDS, Two, Diamonds);
-make_bid!(TWO_HEARTS, Two, Hearts);
-make_bid!(TWO_SPADES, Two, Spades);
-make_bid!(TWO_NOTRUMP, Two, NoTrump);
-
-make_bid!(THREE_CLUBS, Three, Clubs);
-make_bid!(THREE_DIAMONDS, Three, Diamonds);
-make_bid!(THREE_HEARTS, Three, Hearts);
-make_bid!(THREE_SPADES, Three, Spades);
-make_bid!(THREE_NOTRUMP, Three, NoTrump);
-
-make_bid!(FOUR_CLUBS, Four, Clubs);
-make_bid!(FOUR_DIAMONDS, Four, Diamonds);
-make_bid!(FOUR_HEARTS, Four, Hearts);
-make_bid!(FOUR_SPADES, Four, Spades);
-make_bid!(FOUR_NOTRUMP, Four, NoTrump);
-
-make_bid!(FIVE_CLUBS, Five, Clubs);
-make_bid!(FIVE_DIAMONDS, Five, Diamonds);
-make_bid!(FIVE_HEARTS, Five, Hearts);
-make_bid!(FIVE_SPADES, Five, Spades);
-make_bid!(FIVE_NOTRUMP, Five, NoTrump);
-
-make_bid!(SIX_CLUBS, Six, Clubs);
-make_bid!(SIX_DIAMONDS, Six, Diamonds);
-make_bid!(SIX_HEARTS, Six, Hearts);
-make_bid!(SIX_SPADES, Six, Spades);
-make_bid!(SIX_NOTRUMP, Six, NoTrump);
-
-make_bid!(SEVEN_CLUBS, Seven, Clubs);
-make_bid!(SEVEN_DIAMONDS, Seven, Diamonds);
-make_bid!(SEVEN_HEARTS, Seven, Hearts);
-make_bid!(SEVEN_SPADES, Seven, Spades);
-make_bid!(SEVEN_NOTRUMP, Seven, NoTrump);
+pub mod constants;
 
 /// These are possible errors arising from trying to make a bid.
 #[derive(Debug, Eq, PartialEq)]
@@ -291,7 +255,7 @@ pub enum Error {
     /// # Example:
     /// ```should_panic
     /// # use bridge_backend::{Auction, BridgeDirection};
-    /// # use bridge_backend::auction::{Error, ONE_DIAMOND, ONE_CLUB};
+    /// # use bridge_backend::auction::{Error, constants::*};
     /// # fn main() -> Result<(), Error> {
     /// let mut auction = Auction::new(BridgeDirection::S);
     /// auction.bid(ONE_DIAMOND)?;
@@ -308,8 +272,8 @@ pub enum Error {
     /// # Example:
     /// ```should_panic
     /// # use bridge_backend::{Auction, BridgeDirection};
-    /// use bridge_backend::auction::{Bid::RealBid, Error, StrainBid, PASS, DOUBLE, ONE_CLUB};
-    /// use std::convert::TryFrom;
+    /// # use bridge_backend::auction::{Error, constants::*};
+    ///
     /// # fn main() -> Result<(), Error> {
     /// let mut auction = Auction::new(BridgeDirection::S);
     /// auction.bid(ONE_CLUB)?;
@@ -327,8 +291,8 @@ pub enum Error {
     /// # Example:
     /// ```should_panic
     /// # use bridge_backend::{Auction, BridgeDirection};
-    /// use bridge_backend::auction::{Bid::RealBid, Error, StrainBid, PASS, REDOUBLE, ONE_DIAMOND};
-    /// use std::convert::TryFrom;
+    /// # use bridge_backend::auction::{Error, constants::*};
+    ///
     /// # fn main() -> Result<(), Error> {
     /// let mut auction = Auction::new(BridgeDirection::S);
     /// auction.bid(ONE_DIAMOND)?;
