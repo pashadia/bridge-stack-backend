@@ -1,5 +1,5 @@
 use crate::auction::Error::InsufficientBid;
-use crate::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
+use crate::auction::{Bid::*, *};
 use crate::contract::Contract::PassedOut;
 use crate::contract::{ContractLevel, Strain};
 use crate::BridgeDirection;
@@ -25,10 +25,7 @@ fn can_pass_out() -> Result<(), Error> {
 fn can_bid_strain() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
     auction.bid(PASS)?;
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::One,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(ONE_DIAMOND)?;
 
     auction.bid(PASS)?;
     auction.bid(PASS)?;
@@ -44,24 +41,13 @@ fn can_bid_strain() -> Result<(), Error> {
 fn disallow_insufficient() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
     auction.bid(PASS)?;
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::One,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(ONE_DIAMOND)?;
 
     auction.bid(PASS)?;
     assert!(auction.last_strain_bid.is_some());
 
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::One,
-        strain: Strain::Spades,
-    }))?;
-    let insufficient = auction
-        .bid(RealBid(StrainBid {
-            level: ContractLevel::One,
-            strain: Strain::Hearts,
-        }))
-        .unwrap_err();
+    auction.bid(ONE_SPADE)?;
+    let insufficient = auction.bid(ONE_HEART).unwrap_err();
     assert_eq!(insufficient, InsufficientBid);
 
     if let Some(strain_bid) = auction.last_strain_bid {
@@ -71,27 +57,11 @@ fn disallow_insufficient() -> Result<(), Error> {
     }
 
     auction.bid(PASS)?;
-    auction
-        .bid(RealBid(StrainBid {
-            level: ContractLevel::One,
-            strain: Strain::Spades,
-        }))
-        .unwrap_err();
+    auction.bid(ONE_SPADE).unwrap_err();
 
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::Three,
-        strain: Strain::Spades,
-    }))?;
+    auction.bid(THREE_SPADES)?;
 
-    assert_eq!(
-        auction
-            .bid(RealBid(StrainBid {
-                level: ContractLevel::Two,
-                strain: Strain::Clubs,
-            }))
-            .unwrap_err(),
-        Error::InsufficientBid
-    );
+    assert_eq!(auction.bid(TWO_CLUBS).unwrap_err(), Error::InsufficientBid);
 
     Ok(())
 }
@@ -99,10 +69,7 @@ fn disallow_insufficient() -> Result<(), Error> {
 #[test]
 fn doubles() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::S);
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::One,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(ONE_DIAMOND)?;
     auction.bid(DOUBLE)?;
     assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
 
@@ -110,19 +77,11 @@ fn doubles() -> Result<(), Error> {
     assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
 
     assert_eq!(
-        auction
-            .bid(RealBid(StrainBid {
-                level: ContractLevel::One,
-                strain: Strain::Diamonds,
-            }))
-            .unwrap_err(),
+        auction.bid(ONE_DIAMOND).unwrap_err(),
         Error::InsufficientBid
     ); // Good to test this after double
 
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::Three,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(THREE_DIAMONDS)?;
     auction.bid(PASS)?;
     assert_eq!(auction.bid(DOUBLE).unwrap_err(), Error::CantDouble);
     auction.bid(PASS)?;
@@ -187,10 +146,7 @@ fn auction_finished() -> Result<(), Error> {
     let mut auction = Auction::new(BridgeDirection::W);
 
     auction.bid(PASS)?;
-    auction.bid(RealBid(StrainBid {
-        level: ContractLevel::Three,
-        strain: Strain::Diamonds,
-    }))?;
+    auction.bid(THREE_DIAMONDS)?;
     auction.bid(DOUBLE)?;
     auction.bid(PASS)?;
     auction.bid(PASS)?;
@@ -203,7 +159,7 @@ fn auction_finished() -> Result<(), Error> {
 }
 
 mod contract {
-    use crate::auction::{Auction, Bid::*, Error, StrainBid, DOUBLE, PASS, REDOUBLE};
+    use crate::auction::{Bid::*, *};
     use crate::contract::{BidContract, Contract, Modifier};
     use crate::BridgeDirection;
     use std::convert::{TryFrom, TryInto};
@@ -225,7 +181,7 @@ mod contract {
     #[test]
     fn basic_contract() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::S);
-        auction.bid(RealBid(StrainBid::try_from("2s").unwrap()))?;
+        auction.bid(TWO_SPADES)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
         assert_eq!(auction.contract(), None);
@@ -270,14 +226,14 @@ mod contract {
     fn redoubled_contract() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::S);
 
-        auction.bid(RealBid(StrainBid::try_from("1n").unwrap()))?;
+        auction.bid(ONE_NOTRUMP)?;
         auction.bid(DOUBLE)?;
         auction.bid(PASS)?;
         auction.bid(REDOUBLE).unwrap_err(); // just checking
-        auction.bid(RealBid(StrainBid::try_from("2n").unwrap()))?;
+        auction.bid(TWO_NOTRUMP)?;
 
         auction.bid(DOUBLE)?;
-        auction.bid(RealBid(StrainBid::try_from("3n").unwrap()))?;
+        auction.bid(THREE_NOTRUMP)?;
         auction.bid(DOUBLE)?;
         auction.bid(REDOUBLE)?;
 
@@ -302,9 +258,9 @@ mod contract {
     #[test]
     fn declarer_is_first_to_name_contract() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::S);
-        auction.bid(RealBid(StrainBid::try_from("1nt").unwrap()))?;
+        auction.bid(ONE_NOTRUMP)?;
         auction.bid(PASS)?;
-        auction.bid(RealBid(StrainBid::try_from("3nt").unwrap()))?;
+        auction.bid(THREE_NOTRUMP)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
         assert_eq!(auction.contract(), None);
@@ -327,7 +283,7 @@ mod contract {
         let mut auction = Auction::new(BridgeDirection::W);
         auction.bid(PASS)?;
         auction.bid(PASS)?;
-        auction.bid(RealBid(StrainBid::try_from("4d").unwrap()))?;
+        auction.bid(FOUR_DIAMONDS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
@@ -342,13 +298,12 @@ mod contract {
         );
 
         let mut auction = Auction::new(BridgeDirection::W);
-        auction.bid(RealBid(StrainBid::try_from("1d").unwrap()))?;
-        auction.bid(RealBid(StrainBid::try_from("1s").unwrap()))?;
-        auction.bid(RealBid(StrainBid::try_from("2d").unwrap()))?;
-        auction.bid(RealBid(StrainBid::try_from("2h").unwrap()))?;
+        auction.bid(ONE_DIAMOND)?;
+        auction.bid(ONE_SPADE)?;
+        auction.bid(TWO_DIAMONDS)?;
+        auction.bid(TWO_HEARTS)?;
         auction.bid(PASS)?;
-        auction.bid(RealBid(StrainBid::try_from("4h").unwrap()))?;
-        // auction.bid(DOUBLE)?;
+        auction.bid(FOUR_HEARTS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
@@ -367,10 +322,10 @@ mod contract {
     #[test]
     fn declarer_did_actually_win_auction() -> Result<(), Error> {
         let mut auction = Auction::new(BridgeDirection::N);
-        auction.bid(RealBid(StrainBid::try_from("1d").unwrap()))?;
-        auction.bid(RealBid(StrainBid::try_from("2d").unwrap()))?;
+        auction.bid(ONE_DIAMOND)?;
+        auction.bid(TWO_DIAMONDS)?;
         auction.bid(PASS)?;
-        auction.bid(RealBid(StrainBid::try_from("3d").unwrap()))?;
+        auction.bid(THREE_DIAMONDS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;
         auction.bid(PASS)?;

@@ -7,8 +7,8 @@
 mod contract;
 use contract::Contract;
 
-mod auction;
-use auction::Auction;
+pub mod auction;
+pub use auction::Auction;
 
 mod cardplay;
 
